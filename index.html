@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cargar, Actualizar y Eliminar Productos</title>
+</head>
+
+<body>
+    <h1>Cargar, Actualizar y Eliminar Productos</h1>
+
+    <!-- Formulario para cargar un producto -->
+    <form id="productForm">
+        <label for="productName">Nombre del Producto:</label>
+        <input type="text" id="productName" name="productName" required><br>
+
+        <label for="productPrice">Precio del Producto:</label>
+        <input type="number" id="productPrice" name="productPrice" required><br>
+
+        <button type="submit">Guardar Producto</button>
+    </form>
+
+    <!-- Tabla para mostrar los productos -->
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Filas de productos -->
+        </tbody>
+    </table>
+
+    <script>
+        // Evento para cargar la lista de productos al cargar la página
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadProducts();
+        });
+
+        // Evento para agregar un producto
+        document.getElementById('productForm').addEventListener('submit', async (event) => {
+            event.preventDefault(); // Evita que el formulario se envíe por defecto
+
+            const form = event.target;
+            const nombre = form.elements.productName.value;
+            const precio = form.elements.productPrice.value;
+
+            try {
+                const response = await fetch('http://localhost:5000/productos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre, precio })
+                });
+
+                if (response.ok) {
+                    alert('Producto guardado exitosamente');
+                    form.reset(); // Reinicia los campos del formulario
+                    await loadProducts(); // Actualiza la lista de productos
+                } else {
+                    const errorMessage = await response.text();
+                    throw new Error(errorMessage);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error al guardar el producto');
+            }
+        });
+
+        // Función para cargar la lista de productos
+        async function loadProducts() {
+            try {
+                const response = await fetch('http://localhost:5000/productos');
+                const products = await response.json();
+
+                const tableBody = document.querySelector('#productTable tbody');
+                tableBody.innerHTML = ''; // Limpia el contenido de la tabla
+
+                products.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${product.nombre}</td>
+                        <td>${product.precio}</td>
+                        <td>
+                            <button class="update-button" data-product-id="${product.id}">Actualizar</button>
+                            <button class="delete-button" data-product-id="${product.id}">Eliminar</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+                
+// Agrega eventos a los botones de actualizar y eliminar
+const updateButtons = document.querySelectorAll('.update-button');
+updateButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const productId = button.dataset.productId;
+        // Lógica para actualizar el producto
+        // ...
+    });
+});
+
+const deleteButtons = document.querySelectorAll('.delete-button');
+deleteButtons.forEach(button => {
+    button.addEventListener('click', async () => {
+        const productId = button.dataset.productId;
+        try {
+            const response = await fetch(`http://localhost:5000/productos/${productId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('Producto eliminado exitosamente');
+                await loadProducts(); // Actualiza la lista de productos
+            } else {
+                const errorMessage = await response.text();
+                throw new Error(errorMessage);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error al eliminar el producto');
+        }
+    });
+});
+            } catch (error) {
+                console.error(error);
+                alert('Error al cargar los productos');
+            }
+        }
+    </script>
+</body>
+
+</html>
